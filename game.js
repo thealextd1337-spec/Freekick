@@ -239,7 +239,7 @@
       try { await shell.requestFullscreen({ navigationUI: 'hide' }); $('#install-hint').hidden = true; syncFullscreen(); return; } catch (_) { /* Explain browser limitation below. */ }
     }
     $('#install-hint').hidden = false;
-    $('#status').textContent = 'Dieser Browser unterstützt hier kein echtes Vollbild.';
+    $('#status').textContent = 'Kein Browser-Vollbild. Im Browsermenü „Zum Home-Bildschirm hinzufügen“ wählen.';
   });
   document.addEventListener('fullscreenchange', syncFullscreen);
   document.addEventListener('fullscreenerror', () => { $('#install-hint').hidden = false; });
