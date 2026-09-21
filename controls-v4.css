@@ -1,37 +1,66 @@
-.controls{grid-template-columns:1fr 1.3fr 210px}
-.meter-box[hidden]{display:none}
-.meter-label{display:flex;justify-content:space-between;color:#e5fb81;font-size:12px;letter-spacing:.1em}
-.meter-track{position:relative;height:18px;border:2px solid #b1c9b0;border-radius:12px;margin:12px 0 4px;background:linear-gradient(90deg,#de8a58,#e7e567 50%,#de8a58)}
-.meter-track span{position:absolute;top:-5px;width:5px;height:25px;background:#fff;border:1px solid #16302a;box-shadow:0 0 6px #fff;transform:translateX(-50%)}
-.meter-box p{margin:6px 0 0;color:#a9c5b6;font-size:10px}
-.shoot{justify-content:center;text-align:center;font-size:15px}
-.fullscreen-toggle{border:1px solid #668b78;background:#203a3c;color:#e5fb81;border-radius:5px;padding:8px 12px;font-size:12px;font-weight:800;white-space:nowrap}
+.game-shell{height:clamp(520px,73vh,760px);overflow:hidden}
+.game-shell .field{position:relative;width:100%;height:100%;min-height:0;display:block;background:#316b45}
+.game-shell canvas{position:absolute;inset:0;width:100%;height:100%;max-width:none;max-height:none;object-fit:fill;image-rendering:auto;touch-action:none}
+.game-shell .game-top{position:absolute;z-index:3;top:0;left:0;right:0;min-height:0;padding:calc(10px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) 0 calc(12px + env(safe-area-inset-left));background:linear-gradient(#10242dcc,transparent);display:flex;align-items:flex-start;gap:8px;pointer-events:none}
+.game-top>*{pointer-events:auto}
+.game-top .tabs{gap:5px}
+.game-top .tabs button{border:1px solid #e3f8b78a;background:#153731e0;color:#eff9df;padding:8px 11px;min-height:38px;border-radius:7px;font-size:12px}
+.game-top .tabs button.active{background:#d5f25e;color:#1c3028}
+.game-top .score{margin-left:auto;align-self:center;padding:6px 10px;background:#10242ddc;border-radius:7px;color:#e8f3dd;gap:5px;font-size:15px;letter-spacing:0}
+.game-top .score strong{font-size:18px}
+.fullscreen-toggle{border:1px solid #e3f8b78a;background:#153731e0;color:#e5fb81;border-radius:7px;padding:8px 11px;min-height:38px;font-size:12px;font-weight:800;white-space:nowrap}
 .fullscreen-toggle:hover{background:#31504b}
-.game-shell:fullscreen,.game-shell.fullscreen-fallback{width:100vw;height:100dvh;max-width:none;margin:0;border:0;border-radius:0;display:flex;flex-direction:column;background:#172b30}
-.game-shell.fullscreen-fallback{position:fixed;inset:0;z-index:9999}
-body.game-fullscreen{overflow:hidden}
-.game-shell:fullscreen .field,.game-shell.fullscreen-fallback .field{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
-.game-shell:fullscreen .field canvas,.game-shell.fullscreen-fallback .field canvas{width:auto;height:auto;max-width:100%;max-height:100%;margin:0;object-fit:contain}
-.game-shell:fullscreen .game-top,.game-shell.fullscreen-fallback .game-top,.game-shell:fullscreen .controls,.game-shell.fullscreen-fallback .controls,.game-shell:fullscreen .status,.game-shell.fullscreen-fallback .status{flex-shrink:0}
+.game-shell .status{position:absolute;z-index:2;top:calc(55px + env(safe-area-inset-top));left:calc(12px + env(safe-area-inset-left));right:calc(12px + env(safe-area-inset-right));width:max-content;max-width:calc(100% - 24px);min-height:0;padding:7px 10px;background:#10242dbb;border-radius:5px;color:#eef8e5;font-size:12px;pointer-events:none}
+.game-shell .controls{position:absolute;z-index:3;bottom:calc(12px + env(safe-area-inset-bottom));left:calc(12px + env(safe-area-inset-left));right:calc(12px + env(safe-area-inset-right));padding:0;display:grid;grid-template-columns:minmax(140px,260px) minmax(125px,190px);grid-template-rows:auto auto;justify-content:space-between;align-items:end;gap:8px 16px;pointer-events:none}
+.controls>*{pointer-events:auto}
+.control,.meter-box{background:#102e2dda;border:1px solid #b2d3978a;border-radius:9px;padding:9px 11px;backdrop-filter:blur(5px)}
+.control{grid-column:1;grid-row:1}
+.control label{font-size:11px;letter-spacing:.05em}
+.control input{display:block;width:100%;height:34px;min-height:34px;margin:3px 0 0;touch-action:none}
+.meter-box{grid-column:1;grid-row:2}
+.meter-box[hidden]{display:none}
+.meter-label{display:flex;justify-content:space-between;color:#e5fb81;font-size:12px;letter-spacing:.08em}
+.meter-track{position:relative;height:15px;border:2px solid #b1c9b0;border-radius:12px;margin:7px 0 3px;background:linear-gradient(90deg,#de8a58,#e7e567 50%,#de8a58)}
+.meter-track span{position:absolute;top:-5px;width:5px;height:21px;background:#fff;border:1px solid #16302a;box-shadow:0 0 6px #fff;transform:translateX(-50%)}
+.meter-box p{margin:4px 0 0;color:#c5dfc9;font-size:10px;line-height:1.25}
+.game-shell .shoot{grid-column:2;grid-row:1/3;justify-content:center;text-align:center;min-height:70px;width:100%;border-radius:14px;border-bottom-width:5px;padding:12px;font-size:15px;box-shadow:0 6px 20px #10251b99}
+.field-tip{display:none}
+.install-hint{max-width:680px;margin:12px auto;padding:11px 14px;background:#253a40;border-left:3px solid #d5f25e;color:#e5f2dd;font-size:13px;line-height:1.4}
+.game-shell:fullscreen{width:100vw;height:100dvh;max-width:none;margin:0;border:0;border-radius:0;background:#172b30}
+.game-shell:fullscreen .field{height:100%;width:100%}
+body:has(.game-shell:fullscreen){overflow:hidden}
 @media(max-width:680px){
-  main{padding:0 8px 12px}
-  header{height:52px}
-  .brand{font-size:17px}.brand b{width:34px;height:36px;font-size:27px}.brand small{font-size:7px}
-  .demo{font-size:8px;padding:6px}
-  .intro{padding:12px 3px 10px}.intro .eyebrow,.intro>p:last-child{display:none}
-  h1{font-size:clamp(24px,7vw,30px);line-height:1}
-  .game-shell{margin-inline:-8px;border-left:0;border-right:0;border-radius:0}
-  .game-top{min-height:46px;padding:6px}.tabs button{padding:8px 9px}
-  .fullscreen-toggle{padding:7px 8px;font-size:12px;line-height:1;display:flex;align-items:center;gap:3px}.fullscreen-toggle span{display:inline}
-  .score strong{font-size:19px}
-  .field canvas,.field.corner-view canvas{width:100%;height:auto;margin:0;max-width:none}
-  .field-tip{display:none}
-  .controls{grid-template-columns:1fr 1fr;gap:8px 12px;padding:10px 10px 5px}
-  .control label{font-size:9px;letter-spacing:0}
-  .meter-label{font-size:10px}.meter-track{margin:8px 0 2px}
-  .meter-box p{font-size:9px;line-height:1.2}
-  .shoot{min-height:44px;padding:9px 12px;font-size:14px}
-  .status{min-height:31px;padding:3px 10px 8px}
-  .hint{font-size:10px;margin:8px 0 0}
-  footer{margin:14px 0!important}
+  main{max-width:none;padding:0}
+  header{height:48px;padding:0 10px;border-bottom:0}
+  .intro{display:none}
+  .game-shell{height:calc(100dvh - 48px);min-height:400px;margin:0;border:0;border-radius:0;box-shadow:none}
+  .game-shell:fullscreen{height:100dvh}
+  .game-top .tabs button{min-height:36px;padding:6px 8px;font-size:10px}
+  .game-top .score{padding:6px 7px;font-size:12px}
+  .game-top .score strong{font-size:15px}
+  .fullscreen-toggle{min-height:36px;padding:6px 8px;font-size:17px;line-height:1}
+  .fullscreen-toggle span{display:none}
+  .game-shell .status{top:calc(53px + env(safe-area-inset-top));font-size:11px}
+  .game-shell .controls{grid-template-columns:minmax(0,1fr) minmax(122px,40%);gap:7px 10px}
+  .control,.meter-box{padding:7px 8px}
+  .control label,.meter-label{font-size:10px}
+  .control input{height:32px;min-height:32px}
+  .meter-box p{display:none}
+  .game-shell .shoot{min-height:64px;padding:8px;font-size:13px}
+  .hint{margin:8px 12px;font-size:10px}
+  .install-hint{margin:8px 12px}
+}
+@media(max-height:600px){
+  main{max-width:none;padding:0}
+  header,.intro{display:none}
+  .game-shell{height:100dvh;min-height:0;margin:0;border:0;border-radius:0;box-shadow:none}
+}
+@media(max-height:470px){
+  .game-shell .status{display:none}
+  .game-shell .controls{bottom:calc(5px + env(safe-area-inset-bottom));gap:3px 10px}
+  .control,.meter-box{padding:4px 8px}
+  .control input{height:26px;min-height:26px}
+  .meter-track{margin:4px 0 0}
+  .meter-box p{display:none}
+  .game-shell .shoot{min-height:54px}
 }

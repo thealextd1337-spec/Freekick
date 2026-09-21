@@ -2,7 +2,9 @@
 
 Eigenständige, im Browser spielbare Demo für Freistöße und Eckbälle. Ein Klick, Fingertipp oder Druck auf die Leertaste legt nacheinander Höhe, Richtung und Effet fest; der dritte Schritt startet den Schuss. Die Schusshärte wird über den Regler eingestellt.
 
-Der Ball wird in Metern mit Schwerkraft und seitlicher Effetkraft berechnet. Niedrige Schüsse und gelandete Bälle rollen mit Reibung auf dem Rasen. Die Toröffnung entspricht 7,32 × 2,44 Metern. Mauer, Pfosten, Latte und Torwart werden während des Flugs geprüft. Die Eckballkamera zeigt den größeren Ausschnitt von der Fahne bis zum Tor. Auf Mobilgeräten nutzt das Spielfeld die volle Breite; der Vollbildknopf vergrößert den Spielbereich.
+Der Ball wird in Metern mit Schwerkraft und seitlicher Effetkraft berechnet. Niedrige Schüsse und gelandete Bälle rollen mit Reibung auf dem Rasen. Die Toröffnung entspricht 7,32 × 2,44 Metern. Pfosten und Latte sind runde Kollisionskörper; Abpraller werden weiter simuliert und ein Tor zählt erst, wenn der ganze Ball die Linie überschritten hat. Im Tor bremst das Netz den Ball. Mauer und Torwart werden während des Flugs geprüft.
+
+Die Steuerung liegt als Overlay im Spielfeld. Die Kamera passt sich Hoch- und Querformat an und rückt während des Schusses näher ans Tor. Der Ball wird zur besseren Erkennbarkeit größer gezeichnet, ohne seinen physikalischen Radius zu ändern. Der Vollbildknopf verwendet die echte Fullscreen API und zeigt bei fehlender Browserunterstützung einen Hinweis zur Installation als App auf dem Home-Bildschirm. Das Web-App-Manifest öffnet die installierte Demo ohne normale Browserleiste, soweit die Plattform dies unterstützt.
 
 ## Lokal starten
 

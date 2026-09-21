@@ -9,6 +9,29 @@ assert.equal(shot(50, 0).event, 'goal');
 assert.equal(shot(49, 3.7).event, 'post');
 assert.equal(shot(55, 3.5).event, 'bar');
 assert.equal(shot(50, 4.7).event, 'miss');
+for (const [height, direction, contact] of [[49, 3.7, 'post'], [55, 3.5, 'bar']]) {
+  const rebound = P.launch('free', { height, direction, spin: 0, power: 65 });
+  let hit = false;
+  for (let i = 0; i < 650 && !rebound.done; i++) {
+    P.step(rebound);
+    if (rebound.contact === contact) {
+      hit = true;
+      assert(!rebound.done, `${contact} contact must not stop the ball`);
+      assert(Math.hypot(rebound.v.x, rebound.v.y, rebound.v.z) > 0, 'the rebound must retain velocity');
+      break;
+    }
+  }
+  assert(hit, `${contact} must physically collide`);
+  while (!rebound.done) P.step(rebound);
+  assert.equal(rebound.event, contact);
+}
+const netBall = P.launch('free', { height: 50, direction: 0, spin: 0, power: 65 });
+while (!netBall.scored && !netBall.done) P.step(netBall);
+assert(netBall.scored && !netBall.done, 'ball remains animated after crossing the goal line');
+assert(netBall.p.y <= -P.GOAL.ballRadius, 'entire ball crosses the line before a goal is awarded');
+while (!netBall.done) P.step(netBall);
+assert.equal(netBall.event, 'goal');
+assert(netBall.p.y >= -P.GOAL.depth, 'net keeps the ball inside the goal');
 assert(shot(50, 0, -100).crossing.x < -1);
 assert(shot(50, 0, 100).crossing.x > 1);
 const flat = P.launch('free', { height: 18, direction: -11, spin: 0, power: 65 });
