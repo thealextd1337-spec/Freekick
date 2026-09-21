@@ -24,7 +24,7 @@
       v: { x: (shot.direction - p.x) / travel, y: mode === 'corner' ? 8 / travel : -speed, z: rolling ? 0 : lift },
       spin: shot.spin, elapsed: 0, rolling, done: false, event: null,
       crossing: null, contact: null, lastContact: null, contactCooldown: 0,
-      scored: false, goalTime: null, missed: false
+      scored: false, goalTime: null, missed: false, netImpact: null
     };
   }
 
@@ -96,7 +96,16 @@
     ball.elapsed += dt;
 
     if (!preview && old.y > 14 && next.y <= 14 && next.x > -1.95 && next.x < 1.65 && next.z < 1.9) {
-      ball.done = true; ball.event = 'wall'; return ball;
+      const players = [-1.5, -.6, .3, 1.2];
+      const nearest = players.reduce((a, x) => Math.abs(x - next.x) < Math.abs(a - next.x) ? x : a, players[0]);
+      const offset = next.x - nearest;
+      ball.p.y = 14 + GOAL.ballRadius;
+      ball.v.y = Math.abs(ball.v.y) * .46;
+      ball.v.x += (Math.abs(offset) < .035 ? (nearest < 0 ? -1 : 1) * .035 : offset) * 12;
+      ball.v.z = Math.max(0, ball.v.z) * .22 + (next.z > .5 ? 1.25 : 0);
+      ball.rolling = ball.p.z <= GOAL.ballRadius && ball.v.z < .05;
+      ball.contact = 'wall'; ball.lastContact = 'wall';
+      return ball;
     }
 
     if (!preview) frameImpact(ball, old, next, dt);
@@ -127,11 +136,15 @@
 
     if (ball.scored) {
       const side = GOAL.halfWidth - GOAL.ballRadius;
-      if (ball.p.y < -GOAL.depth + GOAL.ballRadius) { ball.p.y = -GOAL.depth + GOAL.ballRadius; ball.v.y = Math.abs(ball.v.y) * .12; ball.contact = ball.contact || 'net'; }
-      if (Math.abs(ball.p.x) > side) { ball.p.x = Math.sign(ball.p.x) * side; ball.v.x *= -.12; ball.contact = ball.contact || 'net'; }
-      if (ball.p.z > GOAL.height - GOAL.ballRadius) { ball.p.z = GOAL.height - GOAL.ballRadius; ball.v.z *= -.12; ball.contact = ball.contact || 'net'; }
+      const netHit = (surface, strength) => {
+        ball.contact = ball.contact || 'net';
+        if (!ball.netImpact) ball.netImpact = { surface, x: ball.p.x, z: ball.p.z, y: ball.p.y, strength: clamp(strength / 24, .45, 1.25), time: ball.elapsed };
+      };
+      if (ball.p.y < -GOAL.depth + GOAL.ballRadius) { netHit('back', Math.abs(ball.v.y)); ball.p.y = -GOAL.depth + GOAL.ballRadius; ball.v.y = Math.abs(ball.v.y) * .12; }
+      if (Math.abs(ball.p.x) > side) { netHit('side', Math.abs(ball.v.x)); ball.p.x = Math.sign(ball.p.x) * side; ball.v.x *= -.12; }
+      if (ball.p.z > GOAL.height - GOAL.ballRadius) { netHit('roof', Math.abs(ball.v.z)); ball.p.z = GOAL.height - GOAL.ballRadius; ball.v.z *= -.12; }
       ball.v.x *= .985; ball.v.y *= .985;
-      if (ball.elapsed - ball.goalTime > .85) ball.done = true;
+      if (ball.elapsed - ball.goalTime > 1.2) ball.done = true;
     } else if (ball.elapsed > 4.6 || (ball.missed && ball.elapsed > (ball.crossing?.time || 0) + .75) || (ball.rolling && Math.hypot(ball.v.x, ball.v.y) < .55)) {
       ball.done = true;
       ball.event = ball.lastContact || (ball.missed ? 'miss' : 'short');

@@ -12,6 +12,11 @@ const cornerPreview = P.heightPreview('corner', { height: 50, direction: -5, spi
 assert(cornerPreview.area.z > 1.1 && cornerPreview.area.z < 3.6, 'corner guide must show heading height');
 const shot = (height, direction, spin = 0) => P.predict('free', { height, direction, spin, power: 65 }).ball;
 assert.equal(shot(18, 0).event, 'wall');
+const wallBall = P.launch('free', { height: 18, direction: 0, spin: 0, power: 65 });
+while (!wallBall.contact && !wallBall.done) P.step(wallBall);
+assert.equal(wallBall.contact, 'wall');
+assert(!wallBall.done && wallBall.v.y > 0, 'the wall must deflect the ball back into play');
+assert(Math.abs(wallBall.v.x) > 0, 'a player in the wall must give the rebound a lateral direction');
 assert.equal(shot(50, 0).event, 'goal');
 assert.equal(shot(49, 3.7).event, 'post');
 assert.equal(shot(55, 3.5).event, 'bar');
@@ -38,6 +43,7 @@ assert(netBall.scored && !netBall.done, 'ball remains animated after crossing th
 assert(netBall.p.y <= -P.GOAL.ballRadius, 'entire ball crosses the line before a goal is awarded');
 while (!netBall.done) P.step(netBall);
 assert.equal(netBall.event, 'goal');
+assert(netBall.netImpact && netBall.netImpact.surface === 'back', 'the net must receive a local impact from the ball');
 assert(netBall.p.y >= -P.GOAL.depth, 'net keeps the ball inside the goal');
 assert(shot(50, 0, -100).crossing.x < -1);
 assert(shot(50, 0, 100).crossing.x > 1);

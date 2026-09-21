@@ -13,7 +13,7 @@
   for (const name of ['player-home', 'player-away', 'keeper', 'ball', 'goal', 'player-kick-1', 'player-kick-2', 'player-kick-3', 'keeper-dive-left', 'keeper-dive-right']) {
     const im = new Image(); im.src = `assets/${name}.png?v=4`; im.onload = draw; images[name] = im;
   }
-  const s = { mode: 'free', phase: 'height', height: 50, direction: 0, spin: 0, power: 65, meter: .3, ball: null, shot: null, predicted: null, runup: 0, keeperX: 0, keeperPose: 0, keeperTarget: 0, header: false, goals: 0, tries: 0, freeAttempt: -1, origin: { x: -3, y: 25 }, last: 0, accumulator: 0, flash: 0, message: '', contactMessageUntil: 0 };
+  const s = { mode: 'free', phase: 'height', height: 50, direction: 0, spin: 0, power: 65, meter: .3, ball: null, shot: null, predicted: null, runup: 0, keeperX: 0, keeperPose: 0, keeperTarget: 0, header: false, goals: 0, tries: 0, freeAttempt: -1, origin: { x: -3, y: 25 }, last: 0, accumulator: 0, flash: 0, message: '', contactMessageUntil: 0, netImpact: null, celebrateTime: 0, lastResult: null };
   function line(a, b, color, width = 2) { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke(); }
   function poly(p, fill, stroke, width = 1) { ctx.beginPath(); p.forEach((a, i) => i ? ctx.lineTo(a.x, a.y) : ctx.moveTo(a.x, a.y)); ctx.closePath(); if (fill) { ctx.fillStyle = fill; ctx.fill(); } if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = width; ctx.stroke(); } }
   function circle(p, r, fill, stroke) { ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); if (fill) { ctx.fillStyle = fill; ctx.fill(); } if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 2; ctx.stroke(); } }
@@ -26,17 +26,56 @@
     poly([project(-13, 0), project(13, 0), project(13, 16.5), project(-13, 16.5)], null, '#e9f3dc', 3);
     poly([project(-9.16, 0), project(9.16, 0), project(9.16, 5.5), project(-9.16, 5.5)], null, '#e9f3dc', 3);
     circle(project(0, 11), 4, '#e9f3dc');
-    const goal = images.goal;
-    if (goal.complete && goal.naturalWidth) {
-      const left = project(-P.GOAL.halfWidth, 0), right = project(P.GOAL.halfWidth, 0);
-      const scale = (right.x - left.x) / 774;
-      ctx.imageSmoothingEnabled = true;
-      ctx.drawImage(goal, left.x - 326 * scale, left.y - 625 * scale, goal.width * scale, goal.height * scale);
-    } else {
-      line(project(-3.66, 0), project(-3.66, 0, 2.44), '#fafcf3', 8);
-      line(project(3.66, 0), project(3.66, 0, 2.44), '#fafcf3', 8);
-      line(project(-3.66, 0, 2.44), project(3.66, 0, 2.44), '#fafcf3', 8);
+  }
+  function netPoint(x, y, z, time) {
+    const hit = s.netImpact;
+    if (!hit) return project(x, y, z);
+    const age = Math.max(0, time - hit.at), pulse = Math.exp(-age * 2.7) * Math.cos(age * 13) * hit.strength;
+    if (hit.surface === 'back' && y < -P.GOAL.depth + .01) {
+      const d2 = ((x - hit.x) / 1.15) ** 2 + ((z - hit.z) / .9) ** 2;
+      y -= .55 * pulse * Math.exp(-d2 * 1.4);
+    } else if (hit.surface === 'side' && Math.abs(x) > P.GOAL.halfWidth - .01) {
+      const d2 = ((y - hit.y) / .7) ** 2 + ((z - hit.z) / .85) ** 2;
+      x += Math.sign(x) * .4 * pulse * Math.exp(-d2 * 1.4);
+    } else if (hit.surface === 'roof' && z > P.GOAL.height - .01) {
+      const d2 = ((x - hit.x) / 1.1) ** 2 + ((y - hit.y) / .7) ** 2;
+      z += .38 * pulse * Math.exp(-d2 * 1.4);
     }
+    return project(x, y, z);
+  }
+  function netLine(a, b, time, color, width = 1) {
+    line(netPoint(...a, time), netPoint(...b, time), color, width);
+  }
+  function goalNet(time, overlay = false) {
+    const hw = P.GOAL.halfWidth, h = P.GOAL.height, d = P.GOAL.depth;
+    const color = overlay ? '#f7fff083' : '#eff9e2ae';
+    ctx.save();
+    ctx.lineWidth = 1;
+    for (let x = -hw; x <= hw + .01; x += .37) {
+      for (let z = 0; z < h - .01; z += .305) netLine([x, -d, z], [x, -d, Math.min(h, z + .305)], time, color);
+      if (!overlay) for (let y = -d; y < -.01; y += .3) netLine([x, y, h], [x, Math.min(0, y + .3), h], time, color);
+    }
+    for (let z = 0; z <= h + .01; z += .305) for (let x = -hw; x < hw - .01; x += .37) netLine([x, -d, z], [Math.min(hw, x + .37), -d, z], time, color);
+    if (!overlay) {
+      for (const x of [-hw, hw]) {
+        for (let y = -d; y <= .01; y += .3) netLine([x, y, 0], [x, y, h], time, color);
+        for (let z = 0; z <= h + .01; z += .305) netLine([x, -d, z], [x, 0, z], time, color);
+      }
+      for (let y = -d; y <= .01; y += .3) netLine([-hw, y, h], [hw, y, h], time, color);
+    }
+    ctx.restore();
+  }
+  function goalFrame() {
+    const hw = P.GOAL.halfWidth, h = P.GOAL.height, d = P.GOAL.depth;
+    for (const x of [-hw, hw]) {
+      line(project(x, 0, h), project(x, -d, h), '#899997', 5);
+      line(project(x, -d, 0), project(x, -d, h), '#879994', 4);
+    }
+    line(project(-hw, -d, h), project(hw, -d, h), '#b9c9be', 5);
+    line(project(-hw, 0), project(-hw, 0, h), '#dae9df', 8);
+    line(project(hw, 0), project(hw, 0, h), '#dae9df', 8);
+    line(project(-hw, 0, h), project(hw, 0, h), '#f7fff4', 8);
+    line(project(-hw, 0, h), project(hw, 0, h), '#ffffff', 2);
   }
   function sprite(name, x, y, size, dx = 0, dy = 0) {
     size *= view.spriteScale * view.zoom;
@@ -45,12 +84,28 @@
     if (im?.complete && im.naturalWidth) { ctx.imageSmoothingEnabled = true; ctx.drawImage(im, p.x - size / 2 + dx, p.y - size * .76 + dy, size, size); }
     else circle({ x: p.x, y: p.y - 20 }, size * .23, name.includes('keeper') ? '#d3ad28' : '#e9cf32');
   }
+  function celebratePlayer(x, y, size, time, index) {
+    const enter = clamp(s.celebrateTime / .7, 0, 1);
+    const spread = [-3.2, -1.1, 1.1, 3.2][index];
+    const px = spread + (x - spread) * enter;
+    const py = y + (1 - enter) * 3.5;
+    const jump = Math.max(0, Math.sin(time * 10 + index * 1.6)) * 11;
+    sprite('player-home', px, py, size, 0, -jump);
+    const p = project(px, py), scale = size * view.spriteScale * view.zoom;
+    const shoulder = { x: p.x, y: p.y - scale * .48 - jump };
+    line({ x: shoulder.x - scale * .16, y: shoulder.y }, { x: shoulder.x - scale * .28, y: shoulder.y - scale * .28 }, '#e2b98b', 4);
+    line({ x: shoulder.x + scale * .16, y: shoulder.y }, { x: shoulder.x + scale * .28, y: shoulder.y - scale * .28 }, '#e2b98b', 4);
+  }
   function people(time) {
     const run = s.phase === 'runup' ? clamp(s.runup / .38, 0, 1) : ['flight', 'result'].includes(s.phase) ? 1 : 0;
     const pose = s.phase === 'runup' ? Math.min(3, Math.floor(run * 4)) : run ? 3 : 0;
     const kick = pose ? `player-kick-${pose}` : 'player-home';
     const keeper = s.keeperPose > .5 ? (s.keeperTarget < 0 ? 'keeper-dive-left' : 'keeper-dive-right') : 'keeper';
     sprite(keeper, s.keeperX, 1.35, 108, s.keeperPose * (s.keeperTarget < 0 ? -14 : 14), -s.keeperPose * 8 + Math.sin(time * 3) * 2);
+    if (s.lastResult === 'goal' && ['celebration', 'result'].includes(s.phase)) {
+      [[-2.2, 12.3], [-.7, 11.2], [.8, 11.6], [2.1, 12.5]].forEach(([x, y], i) => celebratePlayer(x, y, 94, time, i));
+      return;
+    }
     if (s.mode === 'free') [-1.5, -.6, .3, 1.2].forEach((x, i) => sprite('player-away', x, 14, 79, 0, Math.sin(time * 2 + i) * 2));
     else {
       [[-8, 10], [-2, 7], [4, 11], [9, 8]].forEach(([x, y], i) => sprite('player-away', x, y, 77, 0, Math.sin(time * 2 + i) * 2));
@@ -92,14 +147,16 @@
   function draw(time = performance.now() / 1000) {
     const approach = s.ball ? clamp((16 - Math.abs(s.ball.p.y)) / 16, 0, 1) : 0;
     view.zoom = s.phase === 'flight' || s.phase === 'result' ? 1 + approach * (s.mode === 'corner' ? .42 : .14) : 1;
-    ctx.clearRect(0, 0, W, H); field(); people(time);
+    ctx.clearRect(0, 0, W, H); field(); goalNet(time); people(time);
     if (['height', 'direction', 'spin'].includes(s.phase)) drawAim();
     drawBall();
+    if (s.ball?.scored) goalNet(time, true);
+    goalFrame();
     if (s.flash > 0) { ctx.fillStyle = `rgba(235,255,192,${s.flash * .3})`; ctx.fillRect(0, 0, W, H); }
   }
   function ui() {
-    const names = { height: 'HÖHE', direction: 'RICHTUNG', spin: 'EFFET', runup: 'ANLAUF', flight: 'BALLFLUG', result: 'ERGEBNIS' };
-    const prompts = { height: 'Höhe festlegen', direction: 'Richtung festlegen', spin: 'Effet festlegen & schießen', result: 'Noch ein Versuch' };
+    const names = { height: 'HÖHE', direction: 'RICHTUNG', spin: 'EFFET', runup: 'ANLAUF', flight: 'BALLFLUG', celebration: 'TOR', result: 'ERGEBNIS' };
+    const prompts = { height: 'Höhe festlegen', direction: 'Richtung festlegen', spin: 'Effet festlegen & schießen', result: s.lastResult === 'goal' ? 'Weiter · neuer Freistoß' : 'Noch ein Versuch' };
     $('#stage-name').textContent = names[s.phase]; $('#action').disabled = !prompts[s.phase]; $('#action').textContent = prompts[s.phase] || 'Ball unterwegs …';
     $('#meter').hidden = !['height', 'direction', 'spin'].includes(s.phase);
     if (!$('#meter').hidden) {
@@ -138,11 +195,12 @@
     configureView(name);
     $('.field').classList.toggle('corner-view', name === 'corner');
     if (name === 'free') {
-      const positions = [{ x: -3, y: 25 }, { x: -5, y: 22 }, { x: -1, y: 28 }];
+      const positions = [{ x: -3, y: 25 }, { x: 5.6, y: 23 }, { x: -5.2, y: 21 }, { x: 1.8, y: 28 }, { x: -7.4, y: 24 }];
       s.origin = positions[++s.freeAttempt % positions.length];
     }
     s.mode = name; s.phase = 'height'; s.height = 50; s.direction = 0; s.spin = 0; s.meter = .3; s.ball = null; s.shot = null;
-    s.runup = 0; s.keeperX = 0; s.keeperPose = 0; s.header = false; s.accumulator = 0; s.contactMessageUntil = 0;
+    s.runup = 0; s.keeperX = 0; s.keeperPose = 0; s.header = false; s.accumulator = 0; s.contactMessageUntil = 0; s.netImpact = null; s.celebrateTime = 0; s.lastResult = null;
+    $('#goal-banner').hidden = true;
     s.message = name === 'free' ? `Freistoß aus ${s.origin.y} m: Wähle zuerst die Höhe.` : 'Wähle zuerst die Höhe deiner Ecke.';
     $('#free').classList.toggle('active', name === 'free'); $('#corner').classList.toggle('active', name === 'corner');
     $('#tip').textContent = 'Tippen oder Leertaste: Wert festlegen'; ui(); draw();
@@ -173,7 +231,7 @@
       audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
       if (audioContext.state === 'suspended') audioContext.resume().catch(() => {});
     } catch (_) { /* Sound is optional. */ }
-    if (s.phase === 'result') { mode(s.mode); return; }
+    if (s.phase === 'result') { mode(s.lastResult === 'goal' ? 'free' : s.mode); return; }
     if (s.phase === 'height') { s.height = meterValue(); s.phase = 'direction'; s.meter = .5; s.message = 'Lege jetzt die Richtung fest.'; }
     else if (s.phase === 'direction') { s.direction = meterValue(); s.phase = 'spin'; s.meter = 1; s.message = 'Lege jetzt den Effet fest.'; }
     else if (s.phase === 'spin') {
@@ -185,19 +243,26 @@
     ui(); draw();
   }
   function finish(event) {
-    s.phase = 'result'; s.tries++;
+    s.lastResult = event; s.phase = event === 'goal' ? 'celebration' : 'result'; s.tries++;
     const messages = { wall: 'Die Mauer blockt den Schuss.', post: 'Pfosten! So knapp war es.', bar: 'Latte! Der Ball springt zurück.', miss: 'Am Tor vorbei oder darüber.', short: 'Der Ball erreicht das Tor nicht.', noheader: 'Die Flanke findet keinen Mitspieler.', save: 'Starke Parade des Torwarts!', goal: s.header ? 'TOR! Die Ecke wird eingeköpft.' : 'TOR! Perfekt getroffen.' };
-    if (event === 'goal') { s.goals++; s.flash = 1; }
+    if (event === 'goal') {
+      s.goals++; s.flash = .55; s.celebrateTime = 0;
+      $('#goal-caption').textContent = s.header ? 'Kopfball ins Netz!' : 'Was für ein Treffer!';
+      $('#goal-banner').hidden = false;
+    }
     s.message = messages[event] || 'Die Flanke findet keinen Mitspieler.';
     $('#goals').textContent = s.goals; $('#tries').textContent = s.tries; ui(); draw();
   }
   function tick() {
     const b = s.ball, before = { ...b.p }; P.step(b);
+    if (b.netImpact && !s.netImpact) s.netImpact = { ...b.netImpact, at: performance.now() / 1000 };
     if (b.contact === 'post' || b.contact === 'bar') {
       s.message = b.contact === 'post' ? 'Pfosten! Der Ball bleibt im Spiel.' : 'Latte! Der Ball springt weiter.';
       s.contactMessageUntil = b.elapsed + 1.1;
       $('#status').textContent = s.message;
       sound('metal');
+    } else if (b.contact === 'wall' && !b.wallSoundPlayed) {
+      b.wallSoundPlayed = true; s.message = 'Die Mauer lenkt den Ball ab!'; $('#status').textContent = s.message; sound('wall');
     } else if (b.contact === 'net' && !b.netSoundPlayed) { b.netSoundPlayed = true; sound('net'); }
     if (b.elapsed > .2) {
       s.keeperX += clamp(s.keeperTarget - s.keeperX, -2.6 * P.DT, 2.6 * P.DT);
@@ -224,6 +289,10 @@
       s.accumulator += dt;
       while (s.accumulator >= P.DT && s.phase === 'flight') { tick(); s.accumulator -= P.DT; }
       if (s.ball && s.contactMessageUntil && s.ball.elapsed > s.contactMessageUntil && s.phase === 'flight') { s.contactMessageUntil = 0; s.message = 'Der Ball ist noch im Spiel …'; $('#status').textContent = s.message; }
+    }
+    if (s.phase === 'celebration' || (s.phase === 'result' && s.lastResult === 'goal')) {
+      s.celebrateTime += dt;
+      if (s.phase === 'celebration' && s.celebrateTime > 1.35) { s.phase = 'result'; ui(); }
     }
     s.flash = Math.max(0, s.flash - dt * 1.4); draw(now / 1000); requestAnimationFrame(frame);
   }

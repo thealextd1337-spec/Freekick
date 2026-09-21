@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="assets/app-icon-192.png">
   <title>Freekick · Standardsituationen</title>
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="controls-v4.css?v=10">
+  <link rel="stylesheet" href="controls-v4.css?v=11">
   <style>footer{display:flex;justify-content:center;gap:22px;flex-wrap:wrap;margin:24px 0;color:#a9c0b8;font-size:12px}footer details{max-width:330px}footer summary{cursor:pointer;color:#d5f25e;font-weight:700}footer p{line-height:1.5}footer a{color:#d5f25e}</style>
 </head>
 <body>
@@ -20,6 +20,7 @@
     <section class="game-shell" aria-label="Freistoß-Demo">
       <div class="field">
         <canvas id="pitch" width="960" height="600" aria-label="Isometrisches Fußballfeld. Tippe nacheinander für Höhe, Richtung und Effet."></canvas>
+        <div class="goal-banner" id="goal-banner" hidden aria-live="polite"><strong>GOOOAL!</strong><span id="goal-caption">Was für ein Treffer!</span></div>
         <div class="game-top"><div class="tabs" role="group" aria-label="Standardsituation"><button id="free" class="active" type="button">Freistoß</button><button id="corner" type="button">Eckball</button></div><div class="score" aria-label="Tore und Versuche"><strong id="goals">0</strong><span>/</span><strong id="tries">0</strong></div><button id="fullscreen" class="fullscreen-toggle" type="button" aria-label="Vollbildmodus öffnen" aria-pressed="false" title="Vollbildmodus öffnen">⛶ <span>Vollbild</span></button></div>
         <div class="status" id="status" role="status">Wähle zuerst die Höhe deines Freistoßes.</div>
         <div class="controls"><div class="control"><label for="power">SCHUSSHÄRTE <output id="power-value">65 %</output></label><input id="power" type="range" min="25" max="100" value="65"></div><div class="meter-box" id="meter"><div class="meter-label"><strong id="stage-name">HÖHE</strong><output id="meter-value">50 %</output></div><div class="meter-track"><span id="meter-needle"></span></div><div class="height-readout" id="height-readout"><div class="height-point" id="height-first-point"><small id="height-first-label">Mauer</small><strong id="height-first">–</strong></div><div class="height-point" id="height-second-point"><small id="height-second-label">Torlinie</small><strong id="height-second">–</strong></div></div><p class="height-advice" id="height-advice"></p><p id="stage-help">Tippen oder Leertaste: Flughöhe wählen</p></div><button id="action" class="shoot" type="button">Höhe festlegen</button></div>
@@ -30,7 +31,7 @@
     <p class="hint">Drei Eingaben: Höhe → Richtung → Effet & Schuss · Desktop: Klick oder Leertaste · Mobil: Tippen</p>
     <footer><details><summary>Impressum</summary><p>Carlo-Alexander Kamper · Am Anger 11a, 8054 Seiersberg-Pirka, Österreich · <a href="mailto:alex@cakamper.at">alex@cakamper.at</a></p></details><details><summary>Datenschutz</summary><p>Die Demo speichert keine Spielstände, setzt keine Cookies und lädt keine externen Skripte. Beim Abruf können beim Hostinganbieter technische Zugriffsdaten verarbeitet werden.</p></details></footer>
   </main>
-  <script src="physics.js?v=10"></script>
-  <script src="game.js?v=10"></script>
+  <script src="physics.js?v=11"></script>
+  <script src="game.js?v=11"></script>
 </body>
 </html>
