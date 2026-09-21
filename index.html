@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#101b29">
+  <title>SECHSER · Standardsituationen</title>
+  <link rel="stylesheet" href="style.css">
+  <style>footer{display:flex;justify-content:center;gap:22px;flex-wrap:wrap;margin:24px 0;color:#a9c0b8;font-size:12px}footer details{max-width:330px}footer summary{cursor:pointer;color:#d5f25e;font-weight:700}footer p{line-height:1.5}footer a{color:#d5f25e}</style>
+</head>
+<body>
+  <main>
+    <header><a href="https://fussball.cakamper.at/" class="brand"><b>6</b><span>SECHSER<br><small>STANDARDSITUATIONEN</small></span></a><span class="demo">SPIELBARE DEMO</span></header>
+    <section class="intro"><p class="eyebrow">DU AM BALL</p><h1>Dein Schuss.<br><em>Dein Moment.</em></h1><p>Visiere an, gib dem Ball Kraft und Effet. Freistoß oder Eckball: Jede Wiederholung ist ein neuer Versuch.</p></section>
+    <section class="game-shell" aria-label="Freistoß-Demo">
+      <div class="game-top"><div class="tabs" role="group" aria-label="Standardsituation"><button id="free" class="active" type="button">Freistoß</button><button id="corner" type="button">Eckball</button></div><div class="score"><span>TORE</span><strong id="goals">0</strong><span>/</span><strong id="tries">0</strong><span>VERSUCHE</span></div></div>
+      <div class="field"><canvas id="pitch" width="960" height="600" aria-label="Isometrisches Fußballfeld. Ziehe die Zielmarke mit dem Finger oder der Maus."></canvas><div class="field-tip" id="tip">Ziehe die Zielmarke auf dem Spielfeld</div></div>
+      <div class="controls"><div class="control"><label for="power">SCHUSSHÄRTE <output id="power-value">65 %</output></label><input id="power" type="range" min="25" max="100" value="65"></div><div class="control"><label for="curve">EFFET <output id="curve-value">0</output></label><input id="curve" type="range" min="-100" max="100" value="0"><div class="ends"><span>↶ LINKS</span><span>RECHTS ↷</span></div></div><button id="shoot" class="shoot" type="button">SCHIESSEN <span>➜</span></button></div>
+      <div class="status" id="status" role="status">Richte deinen Schuss aus.</div>
+    </section>
+    <p class="hint">Desktop: Ziel mit Maus oder Pfeiltasten bewegen · Mobil: Zielmarke ziehen · Leertaste: schießen</p>
+    <footer><details><summary>Impressum</summary><p>Carlo-Alexander Kamper · Am Anger 11a, 8054 Seiersberg-Pirka, Österreich · <a href="mailto:alex@cakamper.at">alex@cakamper.at</a></p></details><details><summary>Datenschutz</summary><p>Die Demo speichert keine Spielstände, setzt keine Cookies und lädt keine externen Skripte. Beim Abruf können beim Hostinganbieter technische Zugriffsdaten verarbeitet werden.</p></details></footer>
+  </main>
+  <script src="game.js?v=3"></script>
+</body>
+</html>
