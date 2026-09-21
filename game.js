@@ -46,7 +46,7 @@
     const kick = pose ? `player-kick-${pose}` : 'player-home';
     const keeper = s.keeperPose > .5 ? (s.keeperTarget < 0 ? 'keeper-dive-left' : 'keeper-dive-right') : 'keeper';
     sprite(keeper, s.keeperX, 1.35, 108, s.keeperPose * (s.keeperTarget < 0 ? -14 : 14), -s.keeperPose * 8 + Math.sin(time * 3) * 2);
-    if (s.mode === 'free') [-4.5, -2.3, 0, 2.3].forEach((x, i) => sprite('player-away', x, 14, 79, 0, Math.sin(time * 2 + i) * 2));
+    if (s.mode === 'free') [-1.5, -.6, .3, 1.2].forEach((x, i) => sprite('player-away', x, 14, 79, 0, Math.sin(time * 2 + i) * 2));
     else {
       [[-8, 10], [-2, 7], [4, 11], [9, 8]].forEach(([x, y], i) => sprite('player-away', x, y, 77, 0, Math.sin(time * 2 + i) * 2));
       [[-5, 12], [2, 10], [8, 14]].forEach(([x, y], i) => sprite('player-home', x, y, 80, 0, Math.sin(time * 3 + i) * 3));
@@ -76,8 +76,12 @@
     const b = s.ball ? s.ball.p : P.start(s.mode), p = project(b.x, b.y, b.z);
     circle(project(b.x, b.y), 9, '#102a2780');
     const im = images.ball;
-    if (im.complete && im.naturalWidth) { ctx.imageSmoothingEnabled = true; ctx.drawImage(im, p.x - 16, p.y - 16, 32, 32); }
-    else circle(p, 8, '#f4f0da', '#192e38');
+    const center = { x: p.x, y: p.y - 9 };
+    if (im.complete && im.naturalWidth) {
+      ctx.save(); ctx.translate(center.x, center.y);
+      ctx.rotate(s.ball ? s.ball.elapsed * (s.ball.rolling ? 12 : 6) : 0);
+      ctx.imageSmoothingEnabled = true; ctx.drawImage(im, -16, -16, 32, 32); ctx.restore();
+    } else circle(center, 14, '#f4f0da', '#192e38');
   }
   function draw(time = performance.now() / 1000) {
     ctx.clearRect(0, 0, W, H); field(); people(time);
@@ -98,7 +102,7 @@
       $('#meter-needle').style.left = `${fraction * 100}%`;
       $('#meter-value').textContent = s.phase === 'height' ? `${Math.round(v)} %` : s.phase === 'direction' ? `${v > 0 ? '+' : ''}${v.toFixed(1)} m` : `${Math.round(v)}`;
     }
-    $('#stage-help').textContent = s.phase === 'height' ? 'Tippen oder Leertaste: Flughöhe wählen' : s.phase === 'direction' ? 'Die Zielmarke pendelt. Tippen legt die Richtung fest.' : s.phase === 'spin' ? 'Effet pendelt. Tippen löst den Schuss aus.' : '';
+    $('#stage-help').textContent = s.phase === 'height' ? 'Links: Flachschuss rollt am Rasen.' : s.phase === 'direction' ? 'Die Zielmarke pendelt. Tippen legt die Richtung fest.' : s.phase === 'spin' ? 'Effet pendelt. Tippen löst den Schuss aus.' : '';
     $('#status').textContent = s.message;
   }
   function mode(name) {
@@ -112,15 +116,19 @@
   }
   function configureView(name) {
     const mobile = window.matchMedia('(max-width:680px)').matches;
-    H = mobile ? name === 'free' ? 760 : 650 : 600;
+    const baseHeight = mobile ? name === 'free' ? 760 : 650 : 600;
+    const fullscreen = document.fullscreenElement === shell || shell.classList.contains('fullscreen-fallback');
+    const field = $('.field');
+    H = fullscreen && field.clientWidth ? Math.max(baseHeight, Math.round(W * field.clientHeight / field.clientWidth)) : baseHeight;
     if (canvas.height !== H) canvas.height = H;
     const settings = mobile
       ? name === 'free'
-        ? { ox: 480, oy: 230, sx: 56, dx: 8, tilt: -13, dy: 16, sz: 60 }
+        ? { ox: 480, oy: 300, sx: 64, dx: 8, tilt: -15, dy: 13.2, sz: 69 }
         : { ox: 720, oy: 320, sx: 27, dx: 8, tilt: -6.5, dy: 12.5, sz: 30 }
       : name === 'free'
         ? { ox: 480, oy: 220, sx: 45, dx: 8, tilt: -11, dy: 12.5, sz: 48 }
         : { ox: 720, oy: 205, sx: 27, dx: 8, tilt: -6.5, dy: 12.5, sz: 30 };
+    settings.oy += (H - baseHeight) / 2;
     Object.assign(view, settings);
   }
   function action() {
@@ -145,8 +153,8 @@
   function tick() {
     const b = s.ball, before = { ...b.p }; P.step(b);
     if (b.elapsed > .2) {
-      s.keeperX += clamp(s.keeperTarget - s.keeperX, -3.5 * P.DT, 3.5 * P.DT);
-      s.keeperPose = clamp((b.elapsed - .39) / .34, 0, 1);
+      s.keeperX += clamp(s.keeperTarget - s.keeperX, -2.6 * P.DT, 2.6 * P.DT);
+      s.keeperPose = clamp((b.elapsed - .45) / .34, 0, 1);
     }
     if (s.mode === 'corner' && !s.header && before.y < 11 && b.p.y >= 11) {
       const near = Math.min(...[[-5, 12], [2, 10], [8, 14]].map(([x, y]) => Math.hypot(b.p.x - x, b.p.y - y)));
@@ -156,7 +164,7 @@
       } else { b.done = true; b.event = 'noheader'; }
     }
     if (before.y > 1.35 && b.p.y <= 1.35 && b.p.z < 2.3) {
-      const reach = .48 + s.keeperPose * .74;
+      const reach = .45 + s.keeperPose * .55;
       if (Math.abs(b.p.x - s.keeperX) < reach && b.p.z < 1.6 + s.keeperPose * .5) { b.done = true; b.event = 'save'; }
     }
     if (b.done) finish(s.mode === 'corner' && !s.header && b.event === 'goal' ? 'miss' : b.event);
@@ -171,6 +179,31 @@
   $('#free').onclick = () => mode('free'); $('#corner').onclick = () => mode('corner'); $('#action').onclick = action;
   canvas.addEventListener('pointerup', e => { e.preventDefault(); action(); });
   $('#power').addEventListener('input', e => { s.power = Number(e.target.value); $('#power-value').textContent = `${s.power} %`; });
+  const shell = $('.game-shell'), fullButton = $('#fullscreen');
+  function syncFullscreen() {
+    const active = document.fullscreenElement === shell || shell.classList.contains('fullscreen-fallback');
+    fullButton.innerHTML = active ? '⤢ <span>Schließen</span>' : '⛶ <span>Vollbild</span>';
+    fullButton.setAttribute('aria-label', active ? 'Vollbildmodus verlassen' : 'Vollbildmodus öffnen');
+    fullButton.setAttribute('aria-pressed', String(active));
+    fullButton.title = active ? 'Vollbildmodus verlassen' : 'Vollbildmodus öffnen';
+    configureView(s.mode); draw();
+  }
+  fullButton.addEventListener('click', async () => {
+    if (document.fullscreenElement === shell) { await document.exitFullscreen(); return; }
+    if (shell.classList.contains('fullscreen-fallback')) {
+      shell.classList.remove('fullscreen-fallback'); document.body.classList.remove('game-fullscreen'); syncFullscreen(); return;
+    }
+    if (shell.requestFullscreen) {
+      try { await shell.requestFullscreen({ navigationUI: 'hide' }); return; } catch (_) { /* CSS fallback below */ }
+    }
+    shell.classList.add('fullscreen-fallback'); document.body.classList.add('game-fullscreen'); syncFullscreen();
+  });
+  document.addEventListener('fullscreenchange', syncFullscreen);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && shell.classList.contains('fullscreen-fallback')) {
+      shell.classList.remove('fullscreen-fallback'); document.body.classList.remove('game-fullscreen'); syncFullscreen();
+    }
+  });
   document.addEventListener('keydown', e => { if (e.code === 'Space' && !['INPUT', 'BUTTON'].includes(e.target?.tagName)) { e.preventDefault(); if (!e.repeat) action(); } });
   window.addEventListener('resize', () => { configureView(s.mode); draw(); });
   mode('free'); requestAnimationFrame(frame);

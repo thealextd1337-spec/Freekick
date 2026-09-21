@@ -2,7 +2,7 @@
 
 Eigenständige, im Browser spielbare Demo für Freistöße und Eckbälle. Ein Klick, Fingertipp oder Druck auf die Leertaste legt nacheinander Höhe, Richtung und Effet fest; der dritte Schritt startet den Schuss. Die Schusshärte wird über den Regler eingestellt.
 
-Der Ball wird in Metern mit Schwerkraft, seitlicher Effetkraft und Bodenabprall berechnet. Die Toröffnung entspricht 7,32 × 2,44 Metern. Mauer, Pfosten, Latte und Torwart werden während des Flugs geprüft. Die Eckballkamera zeigt den größeren Ausschnitt von der Fahne bis zum Tor.
+Der Ball wird in Metern mit Schwerkraft und seitlicher Effetkraft berechnet. Niedrige Schüsse und gelandete Bälle rollen mit Reibung auf dem Rasen. Die Toröffnung entspricht 7,32 × 2,44 Metern. Mauer, Pfosten, Latte und Torwart werden während des Flugs geprüft. Die Eckballkamera zeigt den größeren Ausschnitt von der Fahne bis zum Tor. Auf Mobilgeräten nutzt das Spielfeld die volle Breite; der Vollbildknopf vergrößert den Spielbereich.
 
 ## Lokal starten
 

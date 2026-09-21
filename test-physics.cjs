@@ -11,6 +11,21 @@ assert.equal(shot(55, 3.5).event, 'bar');
 assert.equal(shot(50, 4.7).event, 'miss');
 assert(shot(50, 0, -100).crossing.x < -1);
 assert(shot(50, 0, 100).crossing.x > 1);
+const flat = P.launch('free', { height: 18, direction: -11, spin: 0, power: 65 });
+assert(flat.rolling, 'a low shot must start on the grass');
+for (let i = 0; i < 40; i++) {
+  const before = flat.p.y;
+  P.step(flat);
+  assert.equal(flat.p.z, P.GOAL.ballRadius, 'rolling ball must stay on the grass');
+  assert(flat.p.y < before, 'rolling ball must continue towards the goal');
+}
+const rollingGoal = shot(18, -3);
+assert.equal(rollingGoal.event, 'goal', 'a ground shot around the wall must be able to score');
+assert.equal(rollingGoal.crossing.z, P.GOAL.ballRadius);
+const landing = P.launch('free', { height: 35, direction: -11, spin: 0, power: 25 });
+for (let i = 0; i < 200 && !landing.rolling && !landing.done; i++) P.step(landing);
+assert(landing.rolling, 'airborne ball must roll after landing');
+assert.equal(landing.p.z, P.GOAL.ballRadius);
 
 for (const height of [30, 40, 50, 60]) {
   const corner = P.launch('corner', { height, direction: -5, spin: 0, power: 65 });

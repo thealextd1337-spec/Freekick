@@ -14,12 +14,13 @@
     const p = start(mode);
     const speed = 18 + shot.power * 0.14;
     const travel = mode === 'corner' ? Math.max(0.38, (shot.direction - p.x) / speed) : p.y / speed;
+    const rolling = shot.height <= 34;
     return {
       p: { ...p },
-      v: { x: (shot.direction - p.x) / travel, y: mode === 'corner' ? 8 / travel : -speed, z: 2 + shot.height * 0.092 },
+      v: { x: (shot.direction - p.x) / travel, y: mode === 'corner' ? 8 / travel : -speed, z: rolling ? 0 : 2 + shot.height * 0.092 },
       spin: shot.spin,
       elapsed: 0,
-      bounces: 0,
+      rolling,
       done: false,
       event: null,
       crossing: null
@@ -30,15 +31,27 @@
     if (ball.done) return ball;
     const old = { ...ball.p };
     // Side acceleration approximates the Magnus force and fades as the ball slows.
-    const speedFactor = clamp(-ball.v.y / 30, 0, 1.2);
-    ball.v.x += ball.spin * 0.045 * speedFactor * dt;
-    ball.v.z -= 9.81 * dt;
+    const speedFactor = clamp(Math.hypot(ball.v.x, ball.v.y) / 30, 0, 1.2);
+    ball.v.x += ball.spin * (ball.rolling ? 0.012 : 0.045) * speedFactor * dt;
+    if (ball.rolling) {
+      const horizontal = Math.hypot(ball.v.x, ball.v.y);
+      const factor = horizontal > 0 ? Math.max(0, 1 - 2.8 * dt / horizontal) : 0;
+      ball.v.x *= factor;
+      ball.v.y *= factor;
+    } else ball.v.z -= 9.81 * dt;
     ball.p.x += ball.v.x * dt;
     ball.p.y += ball.v.y * dt;
-    ball.p.z += ball.v.z * dt;
+    if (ball.rolling) ball.p.z = GOAL.ballRadius;
+    else ball.p.z += ball.v.z * dt;
     ball.elapsed += dt;
 
-    if (old.y > 14 && ball.p.y <= 14 && ball.p.x > -5.8 && ball.p.x < 3.5 && ball.p.z < 1.9) {
+    if (ball.p.z <= GOAL.ballRadius) {
+      ball.p.z = GOAL.ballRadius;
+      ball.v.z = 0;
+      ball.rolling = true;
+    }
+
+    if (old.y > 14 && ball.p.y <= 14 && ball.p.x > -1.95 && ball.p.x < 1.65 && ball.p.z < 1.9) {
       ball.done = true; ball.event = 'wall'; return ball;
     }
 
@@ -54,15 +67,6 @@
       ball.done = true; return ball;
     }
 
-    if (ball.p.z < GOAL.ballRadius) {
-      ball.p.z = GOAL.ballRadius;
-      if (Math.abs(ball.v.z) > 1.6 && ball.bounces < 2) {
-        ball.v.z *= -0.34;
-        ball.v.x *= 0.91;
-        ball.v.y *= 0.91;
-        ball.bounces++;
-      } else ball.v.z = 0;
-    }
     if (ball.elapsed > 3.2 || ball.p.y < -4 || (Math.abs(ball.v.y) < 0.5 && ball.p.y > 0)) {
       ball.done = true; ball.event = 'short';
     }
