@@ -1,0 +1,8 @@
+.controls{grid-template-columns:1fr 1.3fr 210px}
+.meter-box[hidden]{display:none}
+.meter-label{display:flex;justify-content:space-between;color:#e5fb81;font-size:12px;letter-spacing:.1em}
+.meter-track{position:relative;height:18px;border:2px solid #b1c9b0;border-radius:12px;margin:12px 0 4px;background:linear-gradient(90deg,#de8a58,#e7e567 50%,#de8a58)}
+.meter-track span{position:absolute;top:-5px;width:5px;height:25px;background:#fff;border:1px solid #16302a;box-shadow:0 0 6px #fff;transform:translateX(-50%)}
+.meter-box p{margin:6px 0 0;color:#a9c5b6;font-size:10px}
+.shoot{justify-content:center;text-align:center;font-size:15px}
+@media(max-width:680px){.controls{grid-template-columns:1fr 1fr}.meter-box p{font-size:9px}.field canvas{width:140%;max-width:none;margin-left:-20%}.field.corner-view canvas{width:100%;margin-left:0}}

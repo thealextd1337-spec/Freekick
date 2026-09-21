@@ -1,7 +1,7 @@
 """Create original, high-resolution isometric football renders inspired by the reference."""
 import bpy
 import math
-from mathutils import Vector
+from mathutils import Vector, Matrix
 from pathlib import Path
 
 OUT = Path(__file__).resolve().parent / 'renders-v2'
@@ -65,7 +65,7 @@ def save(name):
     bpy.context.scene.render.filepath=str(OUT/name)
     bpy.ops.render.render(write_still=True)
 
-def footballer(name, x=0, y=0, shirt=yellow, shorts=blue, sock=white, skinmat=skin, number=9, keeper=False):
+def footballer(name, x=0, y=0, shirt=yellow, shorts=blue, sock=white, skinmat=skin, number=9, keeper=False, kick_phase=0):
     # Facing the field: layered shapes read clearly at both 768px and sprite scale.
     arm_spread=.73 if keeper else .42
     box(name+' torso',(x,y,1.47),(.76,.44,.71),shirt,.13)
@@ -73,10 +73,12 @@ def footballer(name, x=0, y=0, shirt=yellow, shorts=blue, sock=white, skinmat=sk
     box(name+' shorts',(x,y,1.00),(.68,.43,.35),shorts,.055)
     for side in (-1,1):
         sx=x+side*.20
-        ellipsoid(name+' thigh',(sx,y, .81),(.18,.19,.31),skinmat)
-        tube(name+' sock',(sx,y,.62),(sx+side*.025,y+.02,.23),.115,sock)
-        box(name+' boot',(sx+side*.025,y+.15,.12),(.28,.46,.18),ink,.05)
-        box(name+' boot trim',(sx+side*.025,y+.35,.13),(.25,.04,.055),red,.01)
+        leg_y = (.13 if kick_phase == 1 else -.35 if kick_phase == 2 else .64 if kick_phase == 3 else 0) if side == 1 else (-.12 if kick_phase else 0)
+        foot_z = (.28 if kick_phase == 1 else .38 if kick_phase == 2 else .42 if kick_phase == 3 else .12) if side == 1 else .12
+        ellipsoid(name+' thigh',(sx,y+leg_y*.35, .81),(.18,.19,.31),skinmat)
+        tube(name+' sock',(sx,y+.02+leg_y*.35,.62),(sx+side*.025,y+.02+leg_y,foot_z+.12),.115,sock)
+        box(name+' boot',(sx+side*.025,y+.15+leg_y,foot_z),(.28,.46,.18),ink,.05)
+        box(name+' boot trim',(sx+side*.025,y+.35+leg_y,foot_z+.01),(.25,.04,.055),red,.01)
         shoulder=(x+side*.43,y,1.68)
         elbow=(x+side*(.57+arm_spread*.18),y+.04,1.45 if keeper else 1.40)
         hand=(x+side*(.60+arm_spread*.42),y+.09,1.20 if keeper else 1.23)
@@ -129,14 +131,14 @@ def render_player(filename,shirt,shorts,sock,skinmat,keeper=False):
     clear(); footballer(filename,shirt=shirt,shorts=shorts,sock=sock,skinmat=skinmat,keeper=keeper)
     camera((5,8,5),(0,0,1.25),3.25,(768,768)); save(filename+'.png')
 
-render_player('player-home',yellow,blue,white,skin2)
-render_player('player-away',white,ink,white,skin)
-render_player('keeper',keeper_yellow,ink,keeper_yellow,skin2,True)
-clear(); goal_model(); camera((10,14,8),(0,-1,1.0),10.2,(1280,768)); save('goal.png')
-
-clear(); pitch(); goal_model()
-footballer('yellow striker',x=-5,y=12,shirt=yellow,shorts=blue,sock=white,skinmat=skin2)
-footballer('white defender',x=1.2,y=8,shirt=white,shorts=ink,sock=white,skinmat=skin)
-footballer('keeper',x=.1,y=1.4,shirt=keeper_yellow,shorts=ink,sock=keeper_yellow,skinmat=skin2,keeper=True)
-camera((21,26,18),(0,6,0),31,(1600,900),False); save('scene-preview.png')
-print('Saved high-resolution renders to',OUT)
+if __name__ == '__main__':
+    render_player('player-home',yellow,blue,white,skin2)
+    render_player('player-away',white,ink,white,skin)
+    render_player('keeper',keeper_yellow,ink,keeper_yellow,skin2,True)
+    clear(); goal_model(); camera((10,14,8),(0,-1,1.0),10.2,(1280,768)); save('goal.png')
+    clear(); pitch(); goal_model()
+    footballer('yellow striker',x=-5,y=12,shirt=yellow,shorts=blue,sock=white,skinmat=skin2)
+    footballer('white defender',x=1.2,y=8,shirt=white,shorts=ink,sock=white,skinmat=skin)
+    footballer('keeper',x=.1,y=1.4,shirt=keeper_yellow,shorts=ink,sock=keeper_yellow,skinmat=skin2,keeper=True)
+    camera((21,26,18),(0,6,0),31,(1600,900),False); save('scene-preview.png')
+    print('Saved high-resolution renders to',OUT)
