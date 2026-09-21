@@ -5,7 +5,7 @@
   else root.FreeKickPhysics = api;
 })(typeof globalThis === 'object' ? globalThis : this, () => {
   'use strict';
-  const GOAL = Object.freeze({ halfWidth: 3.66, height: 2.44, ballRadius: 0.11, frameRadius: 0.06, depth: 1.8 });
+  const GOAL = Object.freeze({ halfWidth: 3.66, height: 2.44, ballRadius: 0.11, frameRadius: 0.06, depth: 2.6 });
   const DT = 1 / 120;
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
   const start = (mode, shot) => mode === 'corner' ? { x: -24, y: 3, z: GOAL.ballRadius } : { x: shot?.origin?.x ?? -3, y: shot?.origin?.y ?? 25, z: GOAL.ballRadius };
@@ -142,7 +142,8 @@
       };
       if (ball.p.y < -GOAL.depth + GOAL.ballRadius) { netHit('back', Math.abs(ball.v.y)); ball.p.y = -GOAL.depth + GOAL.ballRadius; ball.v.y = Math.abs(ball.v.y) * .12; }
       if (Math.abs(ball.p.x) > side) { netHit('side', Math.abs(ball.v.x)); ball.p.x = Math.sign(ball.p.x) * side; ball.v.x *= -.12; }
-      if (ball.p.z > GOAL.height - GOAL.ballRadius) { netHit('roof', Math.abs(ball.v.z)); ball.p.z = GOAL.height - GOAL.ballRadius; ball.v.z *= -.12; }
+      const roof = GOAL.height - .39 * clamp(-ball.p.y / GOAL.depth, 0, 1) - GOAL.ballRadius;
+      if (ball.p.z > roof) { netHit('roof', Math.abs(ball.v.z)); ball.p.z = roof; ball.v.z *= -.12; }
       ball.v.x *= .985; ball.v.y *= .985;
       if (ball.elapsed - ball.goalTime > 1.2) ball.done = true;
     } else if (ball.elapsed > 4.6 || (ball.missed && ball.elapsed > (ball.crossing?.time || 0) + .75) || (ball.rolling && Math.hypot(ball.v.x, ball.v.y) < .55)) {

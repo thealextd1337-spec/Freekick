@@ -3,6 +3,7 @@ const P = require('./physics.js');
 
 assert.equal(P.GOAL.halfWidth * 2, 7.32);
 assert.equal(P.GOAL.height, 2.44);
+assert.equal(P.GOAL.depth, 2.6, 'net depth must match the original Blender goal');
 const preview = height => P.heightPreview('free', { height, direction: 0, spin: 0, power: 65 });
 assert.equal(preview(18).wall.z, P.GOAL.ballRadius);
 assert(Math.abs(preview(35).wall.z - preview(34).wall.z) < .2, 'height control must not jump between ground and air');

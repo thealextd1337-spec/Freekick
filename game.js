@@ -9,9 +9,18 @@
     const py = view.oy + x * view.tilt + y * view.dy - z * view.sz;
     return { x: view.ox + (px - view.ox) * view.zoom, y: view.oy + (py - view.oy) * view.zoom };
   };
+  // Match the original Blender goal render to the game's front post positions.
+  // The Blender camera sees the opposite x axis, hence the sign change.
+  const goalProject = (x, y, z = 0) => {
+    const left = project(-P.GOAL.halfWidth, 0), right = project(P.GOAL.halfWidth, 0);
+    const scale = (right.x - left.x) / 774;
+    const px = 709.609 + 104.414 * x + 69.610 * y;
+    const py = 538.775 - 25.196 * x + 37.794 * y - 116.981 * z;
+    return { x: left.x + (px - 326) * scale, y: left.y + (py - 625) * scale };
+  };
   const images = {};
-  for (const name of ['player-home', 'player-away', 'keeper', 'ball', 'goal', 'player-kick-1', 'player-kick-2', 'player-kick-3', 'keeper-dive-left', 'keeper-dive-right']) {
-    const im = new Image(); im.src = `assets/${name}.png?v=4`; im.onload = draw; images[name] = im;
+  for (const name of ['player-home', 'player-away', 'keeper', 'ball', 'goal-frame', 'player-back', 'player-kick-1', 'player-kick-2', 'player-kick-3', 'player-kick-back-1', 'player-kick-back-2', 'player-kick-back-3', 'keeper-dive-left', 'keeper-dive-right']) {
+    const im = new Image(); im.src = `assets/${name}.png?v=${name === 'goal-frame' || name.includes('back') ? 12 : 4}`; im.onload = draw; images[name] = im;
   }
   const s = { mode: 'free', phase: 'height', height: 50, direction: 0, spin: 0, power: 65, meter: .3, ball: null, shot: null, predicted: null, runup: 0, keeperX: 0, keeperPose: 0, keeperTarget: 0, header: false, goals: 0, tries: 0, freeAttempt: -1, origin: { x: -3, y: 25 }, last: 0, accumulator: 0, flash: 0, message: '', contactMessageUntil: 0, netImpact: null, celebrateTime: 0, lastResult: null };
   function line(a, b, color, width = 2) { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke(); }
@@ -29,7 +38,7 @@
   }
   function netPoint(x, y, z, time) {
     const hit = s.netImpact;
-    if (!hit) return project(x, y, z);
+    if (!hit) return goalProject(x, y, z);
     const age = Math.max(0, time - hit.at), pulse = Math.exp(-age * 2.7) * Math.cos(age * 13) * hit.strength;
     if (hit.surface === 'back' && y < -P.GOAL.depth + .01) {
       const d2 = ((x - hit.x) / 1.15) ** 2 + ((z - hit.z) / .9) ** 2;
@@ -37,35 +46,45 @@
     } else if (hit.surface === 'side' && Math.abs(x) > P.GOAL.halfWidth - .01) {
       const d2 = ((y - hit.y) / .7) ** 2 + ((z - hit.z) / .85) ** 2;
       x += Math.sign(x) * .4 * pulse * Math.exp(-d2 * 1.4);
-    } else if (hit.surface === 'roof' && z > P.GOAL.height - .01) {
+    } else if (hit.surface === 'roof' && z > P.GOAL.height - .4) {
       const d2 = ((x - hit.x) / 1.1) ** 2 + ((y - hit.y) / .7) ** 2;
       z += .38 * pulse * Math.exp(-d2 * 1.4);
     }
-    return project(x, y, z);
+    return goalProject(x, y, z);
   }
   function netLine(a, b, time, color, width = 1) {
     line(netPoint(...a, time), netPoint(...b, time), color, width);
   }
   function goalNet(time, overlay = false) {
-    const hw = P.GOAL.halfWidth, h = P.GOAL.height, d = P.GOAL.depth;
+    const hw = P.GOAL.halfWidth, h = P.GOAL.height, d = P.GOAL.depth, rear = 2.05;
     const color = overlay ? '#f7fff083' : '#eff9e2ae';
     ctx.save();
     ctx.lineWidth = 1;
     for (let x = -hw; x <= hw + .01; x += .37) {
-      for (let z = 0; z < h - .01; z += .305) netLine([x, -d, z], [x, -d, Math.min(h, z + .305)], time, color);
-      if (!overlay) for (let y = -d; y < -.01; y += .3) netLine([x, y, h], [x, Math.min(0, y + .3), h], time, color);
+      for (let z = 0; z < rear - .01; z += .293) netLine([x, -d, z], [x, -d, Math.min(rear, z + .293)], time, color);
+      if (!overlay) for (let y = -d; y < -.01; y += .3) {
+        const next = Math.min(0, y + .3);
+        netLine([x, y, h + (rear - h) * -y / d], [x, next, h + (rear - h) * -next / d], time, color);
+      }
     }
-    for (let z = 0; z <= h + .01; z += .305) for (let x = -hw; x < hw - .01; x += .37) netLine([x, -d, z], [Math.min(hw, x + .37), -d, z], time, color);
+    for (let z = 0; z <= rear + .01; z += .293) for (let x = -hw; x < hw - .01; x += .37) netLine([x, -d, z], [Math.min(hw, x + .37), -d, z], time, color);
     if (!overlay) {
       for (const x of [-hw, hw]) {
-        for (let y = -d; y <= .01; y += .3) netLine([x, y, 0], [x, y, h], time, color);
-        for (let z = 0; z <= h + .01; z += .305) netLine([x, -d, z], [x, 0, z], time, color);
+        for (let y = -d; y <= .01; y += .3) netLine([x, y, 0], [x, y, h + (rear - h) * -y / d], time, color);
+        for (let i = 0; i <= 8; i++) netLine([x, -d, rear * i / 8], [x, 0, h * i / 8], time, color);
       }
-      for (let y = -d; y <= .01; y += .3) netLine([-hw, y, h], [hw, y, h], time, color);
+      for (let y = -d; y <= .01; y += .3) netLine([-hw, y, h + (rear - h) * -y / d], [hw, y, h + (rear - h) * -y / d], time, color);
     }
     ctx.restore();
   }
   function goalFrame() {
+    const goal = images['goal-frame'];
+    if (goal.complete && goal.naturalWidth) {
+      const left = project(-P.GOAL.halfWidth, 0), right = project(P.GOAL.halfWidth, 0);
+      const scale = (right.x - left.x) / 774;
+      ctx.drawImage(goal, left.x - 326 * scale, left.y - 625 * scale, goal.width * scale, goal.height * scale);
+      return;
+    }
     const hw = P.GOAL.halfWidth, h = P.GOAL.height, d = P.GOAL.depth;
     for (const x of [-hw, hw]) {
       line(project(x, 0, h), project(x, -d, h), '#899997', 5);
@@ -84,28 +103,12 @@
     if (im?.complete && im.naturalWidth) { ctx.imageSmoothingEnabled = true; ctx.drawImage(im, p.x - size / 2 + dx, p.y - size * .76 + dy, size, size); }
     else circle({ x: p.x, y: p.y - 20 }, size * .23, name.includes('keeper') ? '#d3ad28' : '#e9cf32');
   }
-  function celebratePlayer(x, y, size, time, index) {
-    const enter = clamp(s.celebrateTime / .7, 0, 1);
-    const spread = [-3.2, -1.1, 1.1, 3.2][index];
-    const px = spread + (x - spread) * enter;
-    const py = y + (1 - enter) * 3.5;
-    const jump = Math.max(0, Math.sin(time * 10 + index * 1.6)) * 11;
-    sprite('player-home', px, py, size, 0, -jump);
-    const p = project(px, py), scale = size * view.spriteScale * view.zoom;
-    const shoulder = { x: p.x, y: p.y - scale * .48 - jump };
-    line({ x: shoulder.x - scale * .16, y: shoulder.y }, { x: shoulder.x - scale * .28, y: shoulder.y - scale * .28 }, '#e2b98b', 4);
-    line({ x: shoulder.x + scale * .16, y: shoulder.y }, { x: shoulder.x + scale * .28, y: shoulder.y - scale * .28 }, '#e2b98b', 4);
-  }
   function people(time) {
-    const run = s.phase === 'runup' ? clamp(s.runup / .38, 0, 1) : ['flight', 'result'].includes(s.phase) ? 1 : 0;
+    const run = s.phase === 'runup' ? clamp(s.runup / .38, 0, 1) : ['flight', 'celebration', 'result'].includes(s.phase) ? 1 : 0;
     const pose = s.phase === 'runup' ? Math.min(3, Math.floor(run * 4)) : run ? 3 : 0;
-    const kick = pose ? `player-kick-${pose}` : 'player-home';
+    const kick = pose ? `player-kick-${s.mode === 'free' ? 'back-' : ''}${pose}` : s.mode === 'free' ? 'player-back' : 'player-home';
     const keeper = s.keeperPose > .5 ? (s.keeperTarget < 0 ? 'keeper-dive-left' : 'keeper-dive-right') : 'keeper';
     sprite(keeper, s.keeperX, 1.35, 108, s.keeperPose * (s.keeperTarget < 0 ? -14 : 14), -s.keeperPose * 8 + Math.sin(time * 3) * 2);
-    if (s.lastResult === 'goal' && ['celebration', 'result'].includes(s.phase)) {
-      [[-2.2, 12.3], [-.7, 11.2], [.8, 11.6], [2.1, 12.5]].forEach(([x, y], i) => celebratePlayer(x, y, 94, time, i));
-      return;
-    }
     if (s.mode === 'free') [-1.5, -.6, .3, 1.2].forEach((x, i) => sprite('player-away', x, 14, 79, 0, Math.sin(time * 2 + i) * 2));
     else {
       [[-8, 10], [-2, 7], [4, 11], [9, 8]].forEach(([x, y], i) => sprite('player-away', x, y, 77, 0, Math.sin(time * 2 + i) * 2));
@@ -133,9 +136,10 @@
     ctx.setLineDash([]);
   }
   function drawBall() {
-    const b = s.ball ? s.ball.p : P.start(s.mode, { origin: s.origin }), p = project(b.x, b.y, b.z);
+    const b = s.ball ? s.ball.p : P.start(s.mode, { origin: s.origin });
+    const projected = s.ball?.scored ? goalProject : project, p = projected(b.x, b.y, b.z);
     const size = (s.mode === 'corner' ? clamp(view.sx * .65, 10, 18) : clamp(view.sx * .42, 14, 24)) * view.zoom;
-    circle(project(b.x, b.y), size * .27, '#102a2780');
+    circle(projected(b.x, b.y), size * .27, '#102a2780');
     const im = images.ball;
     const center = { x: p.x, y: p.y - size * .22 };
     if (im.complete && im.naturalWidth) {
