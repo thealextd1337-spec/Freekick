@@ -79,7 +79,7 @@
   }
   function drawBall() {
     const b = s.ball ? s.ball.p : P.start(s.mode, { origin: s.origin }), p = project(b.x, b.y, b.z);
-    const size = clamp(W * .05, 28, 44) * view.zoom * (s.mode === 'corner' ? .62 : 1);
+    const size = (s.mode === 'corner' ? clamp(view.sx * .65, 10, 18) : clamp(view.sx * .42, 14, 24)) * view.zoom;
     circle(project(b.x, b.y), size * .27, '#102a2780');
     const im = images.ball;
     const center = { x: p.x, y: p.y - size * .22 };
