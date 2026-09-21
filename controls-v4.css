@@ -5,4 +5,23 @@
 .meter-track span{position:absolute;top:-5px;width:5px;height:25px;background:#fff;border:1px solid #16302a;box-shadow:0 0 6px #fff;transform:translateX(-50%)}
 .meter-box p{margin:6px 0 0;color:#a9c5b6;font-size:10px}
 .shoot{justify-content:center;text-align:center;font-size:15px}
-@media(max-width:680px){.controls{grid-template-columns:1fr 1fr}.meter-box p{font-size:9px}.field canvas{width:140%;max-width:none;margin-left:-20%}.field.corner-view canvas{width:100%;margin-left:0}}
+@media(max-width:680px){
+  main{padding:0 8px 12px}
+  header{height:52px}
+  .brand{font-size:17px}.brand b{width:34px;height:36px;font-size:27px}.brand small{font-size:7px}
+  .demo{font-size:8px;padding:6px}
+  .intro{padding:12px 3px 10px}.intro .eyebrow,.intro>p:last-child{display:none}
+  h1{font-size:clamp(24px,7vw,30px);line-height:1}
+  .game-top{min-height:46px;padding:6px}.tabs button{padding:8px 9px}
+  .score strong{font-size:19px}
+  .field canvas,.field.corner-view canvas{width:100%;height:auto;margin:0;max-width:none}
+  .field-tip{display:none}
+  .controls{grid-template-columns:1fr 1fr;gap:8px 12px;padding:10px 10px 5px}
+  .control label{font-size:9px;letter-spacing:0}
+  .meter-label{font-size:10px}.meter-track{margin:8px 0 2px}
+  .meter-box p{font-size:9px;line-height:1.2}
+  .shoot{min-height:44px;padding:9px 12px;font-size:14px}
+  .status{min-height:31px;padding:3px 10px 8px}
+  .hint{font-size:10px;margin:8px 0 0}
+  footer{margin:14px 0!important}
+}

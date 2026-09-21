@@ -1,7 +1,8 @@
 (() => {
   'use strict';
   const P = window.FreeKickPhysics, canvas = document.querySelector('#pitch'), ctx = canvas.getContext('2d');
-  const $ = s => document.querySelector(s), W = 960, H = 600, clamp = P.clamp;
+  const $ = s => document.querySelector(s), W = 960, clamp = P.clamp;
+  let H = 600;
   const view = { ox: 480, oy: 220, sx: 45, dx: 8, tilt: -11, dy: 12.5, sz: 48 };
   const project = (x, y, z = 0) => ({ x: view.ox + x * view.sx + y * view.dx, y: view.oy + x * view.tilt + y * view.dy - z * view.sz });
   const images = {};
@@ -101,13 +102,26 @@
     $('#status').textContent = s.message;
   }
   function mode(name) {
-    Object.assign(view, name === 'free' ? { ox: 480, oy: 220, sx: 45, dx: 8, tilt: -11, dy: 12.5, sz: 48 } : { ox: 720, oy: 205, sx: 27, dx: 8, tilt: -6.5, dy: 12.5, sz: 30 });
+    configureView(name);
     $('.field').classList.toggle('corner-view', name === 'corner');
     s.mode = name; s.phase = 'height'; s.height = 50; s.direction = 0; s.spin = 0; s.meter = .3; s.ball = null; s.shot = null;
     s.runup = 0; s.keeperX = 0; s.keeperPose = 0; s.header = false; s.accumulator = 0;
     s.message = name === 'free' ? 'Wähle zuerst die Höhe deines Freistoßes.' : 'Wähle zuerst die Höhe deiner Ecke.';
     $('#free').classList.toggle('active', name === 'free'); $('#corner').classList.toggle('active', name === 'corner');
     $('#tip').textContent = 'Tippen oder Leertaste: Wert festlegen'; ui(); draw();
+  }
+  function configureView(name) {
+    const mobile = window.matchMedia('(max-width:680px)').matches;
+    H = mobile ? name === 'free' ? 760 : 650 : 600;
+    if (canvas.height !== H) canvas.height = H;
+    const settings = mobile
+      ? name === 'free'
+        ? { ox: 480, oy: 230, sx: 56, dx: 8, tilt: -13, dy: 16, sz: 60 }
+        : { ox: 720, oy: 320, sx: 27, dx: 8, tilt: -6.5, dy: 12.5, sz: 30 }
+      : name === 'free'
+        ? { ox: 480, oy: 220, sx: 45, dx: 8, tilt: -11, dy: 12.5, sz: 48 }
+        : { ox: 720, oy: 205, sx: 27, dx: 8, tilt: -6.5, dy: 12.5, sz: 30 };
+    Object.assign(view, settings);
   }
   function action() {
     if (s.phase === 'result') { mode(s.mode); return; }
@@ -158,5 +172,6 @@
   canvas.addEventListener('pointerup', e => { e.preventDefault(); action(); });
   $('#power').addEventListener('input', e => { s.power = Number(e.target.value); $('#power-value').textContent = `${s.power} %`; });
   document.addEventListener('keydown', e => { if (e.code === 'Space' && !['INPUT', 'BUTTON'].includes(e.target?.tagName)) { e.preventDefault(); if (!e.repeat) action(); } });
+  window.addEventListener('resize', () => { configureView(s.mode); draw(); });
   mode('free'); requestAnimationFrame(frame);
 })();
