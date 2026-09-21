@@ -3,6 +3,13 @@ const P = require('./physics.js');
 
 assert.equal(P.GOAL.halfWidth * 2, 7.32);
 assert.equal(P.GOAL.height, 2.44);
+const preview = height => P.heightPreview('free', { height, direction: 0, spin: 0, power: 65 });
+assert.equal(preview(18).wall.z, P.GOAL.ballRadius);
+assert(Math.abs(preview(35).wall.z - preview(34).wall.z) < .2, 'height control must not jump between ground and air');
+assert(preview(50).wall.z > 1.9 && preview(50).goal.z < P.GOAL.height - P.GOAL.ballRadius, 'height guide must show a usable shot window');
+assert(preview(60).goal.z > P.GOAL.height, 'height guide must identify an overhit shot');
+const cornerPreview = P.heightPreview('corner', { height: 50, direction: -5, spin: 0, power: 65 });
+assert(cornerPreview.area.z > 1.1 && cornerPreview.area.z < 3.6, 'corner guide must show heading height');
 const shot = (height, direction, spin = 0) => P.predict('free', { height, direction, spin, power: 65 }).ball;
 assert.equal(shot(18, 0).event, 'wall');
 assert.equal(shot(50, 0).event, 'goal');

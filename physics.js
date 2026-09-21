@@ -16,10 +16,12 @@
     const p = start(mode, shot);
     const speed = 18 + shot.power * 0.14;
     const travel = mode === 'corner' ? Math.max(0.38, (shot.direction - p.x) / speed) : p.y / speed;
-    const rolling = shot.height <= 34;
+    // The lift grows continuously from a grass shot to a high ball.
+    const lift = shot.height <= 50 ? 6.6 * Math.sin(clamp((shot.height - 18) / 32, 0, 1) * Math.PI / 2) : 6.6 + (shot.height - 50) * .092;
+    const rolling = lift < .05;
     return {
       p: { ...p },
-      v: { x: (shot.direction - p.x) / travel, y: mode === 'corner' ? 8 / travel : -speed, z: rolling ? 0 : 2 + shot.height * 0.092 },
+      v: { x: (shot.direction - p.x) / travel, y: mode === 'corner' ? 8 / travel : -speed, z: rolling ? 0 : lift },
       spin: shot.spin, elapsed: 0, rolling, done: false, event: null,
       crossing: null, contact: null, lastContact: null, contactCooldown: 0,
       scored: false, goalTime: null, missed: false
@@ -77,7 +79,7 @@
     return true;
   }
 
-  function step(ball, dt = DT) {
+  function step(ball, dt = DT, preview = false) {
     if (ball.done) return ball;
     const old = { ...ball.p };
     ball.contact = null;
@@ -93,11 +95,11 @@
     ball.p = next;
     ball.elapsed += dt;
 
-    if (old.y > 14 && next.y <= 14 && next.x > -1.95 && next.x < 1.65 && next.z < 1.9) {
+    if (!preview && old.y > 14 && next.y <= 14 && next.x > -1.95 && next.x < 1.65 && next.z < 1.9) {
       ball.done = true; ball.event = 'wall'; return ball;
     }
 
-    frameImpact(ball, old, next, dt);
+    if (!preview) frameImpact(ball, old, next, dt);
     if (ball.p.z <= GOAL.ballRadius) {
       ball.p.z = GOAL.ballRadius;
       if (!ball.rolling && ball.v.z < -1.8) {
@@ -109,7 +111,7 @@
 
     // Keep the first centre crossing for goalkeeper prediction. A goal requires
     // the entire ball to have passed the line within the open frame.
-    if (!ball.crossing && old.y > 0 && ball.p.y <= 0) {
+    if (!preview && !ball.crossing && old.y > 0 && ball.p.y <= 0) {
       const fraction = old.y / (old.y - ball.p.y);
       ball.crossing = {
         x: old.x + (ball.p.x - old.x) * fraction,
@@ -117,7 +119,7 @@
         time: ball.elapsed - dt * (1 - fraction)
       };
     }
-    if (!ball.scored && !ball.missed && old.y > -GOAL.ballRadius && ball.p.y <= -GOAL.ballRadius) {
+    if (!preview && !ball.scored && !ball.missed && old.y > -GOAL.ballRadius && ball.p.y <= -GOAL.ballRadius) {
       const inside = Math.abs(ball.p.x) < GOAL.halfWidth - GOAL.ballRadius - GOAL.frameRadius && ball.p.z < GOAL.height - GOAL.ballRadius - GOAL.frameRadius;
       if (inside) { ball.scored = true; ball.goalTime = ball.elapsed; ball.event = 'goal'; }
       else ball.missed = true;
@@ -144,5 +146,22 @@
     }
     return { ball, points };
   }
-  return { GOAL, DT, clamp, start, launch, step, predict };
+  function heightPreview(mode, shot) {
+    const ball = launch(mode, shot), targets = mode === 'corner' ? { area: 11 } : { wall: 14, goal: 0 };
+    const result = {};
+    for (let n = 0; n < 650 && !ball.done && Object.keys(result).length < Object.keys(targets).length; n++) {
+      const before = { ...ball.p };
+      step(ball, DT, true);
+      for (const [name, y] of Object.entries(targets)) {
+        if (result[name] || !((before.y - y) * (ball.p.y - y) <= 0 && before.y !== ball.p.y)) continue;
+        const fraction = (y - before.y) / (ball.p.y - before.y);
+        result[name] = {
+          x: before.x + (ball.p.x - before.x) * fraction,
+          z: Math.max(GOAL.ballRadius, before.z + (ball.p.z - before.z) * fraction)
+        };
+      }
+    }
+    return result;
+  }
+  return { GOAL, DT, clamp, start, launch, step, predict, heightPreview };
 });

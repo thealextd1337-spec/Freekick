@@ -107,9 +107,32 @@
       const fraction = s.phase === 'height' ? (v - 18) / 62 : s.phase === 'direction' ? (s.mode === 'free' ? (v + 4.7) / 9.4 : (v + 10) / 19) : (v + 100) / 200;
       $('#meter-needle').style.left = `${fraction * 100}%`;
       $('#meter-value').textContent = s.phase === 'height' ? `${Math.round(v)} %` : s.phase === 'direction' ? `${v > 0 ? '+' : ''}${v.toFixed(1)} m` : `${Math.round(v)}`;
+      updateHeightReadout();
     }
-    $('#stage-help').textContent = s.phase === 'height' ? 'Links: Flachschuss rollt am Rasen.' : s.phase === 'direction' ? 'Die Zielmarke pendelt. Tippen legt die Richtung fest.' : s.phase === 'spin' ? 'Effet pendelt. Tippen löst den Schuss aus.' : '';
+    $('#stage-help').textContent = s.phase === 'height' ? '' : s.phase === 'direction' ? 'Die Zielmarke pendelt. Tippen legt die Richtung fest.' : s.phase === 'spin' ? 'Effet pendelt. Tippen löst den Schuss aus.' : '';
     $('#status').textContent = s.message;
+  }
+  function updateHeightReadout() {
+    const preview = P.heightPreview(s.mode, shotNow());
+    const display = point => point ? `${point.z.toFixed(1).replace('.', ',')} m` : '–';
+    const first = $('#height-first-point'), second = $('#height-second-point');
+    const setTone = (element, tone) => { element.classList.remove('low', 'high', 'good'); element.classList.add(tone); };
+    $('#height-first-label').textContent = s.mode === 'free' ? 'Mauer' : 'Strafraum';
+    $('#height-first').textContent = display(s.mode === 'free' ? preview.wall : preview.area);
+    $('#height-readout').classList.toggle('single', s.mode === 'corner');
+    second.hidden = s.mode === 'corner';
+    if (s.mode === 'corner') {
+      const height = preview.area?.z;
+      setTone(first, height < 1.1 ? 'low' : height > 3.6 ? 'high' : 'good');
+      $('#height-advice').textContent = height < 1.1 ? 'Zu flach für einen Kopfball' : height > 3.6 ? 'Zu hoch für einen Kopfball' : 'In guter Kopfballhöhe';
+    } else {
+      const wallHeight = preview.wall?.z, goalHeight = preview.goal?.z;
+      $('#height-second-label').textContent = 'Torlinie';
+      $('#height-second').textContent = display(preview.goal);
+      setTone(first, wallHeight < 1.9 ? 'low' : 'good');
+      setTone(second, goalHeight > P.GOAL.height - P.GOAL.ballRadius - P.GOAL.frameRadius ? 'high' : 'good');
+      $('#height-advice').textContent = wallHeight < 1.9 ? 'Für direkte Bahn zu flach' : goalHeight > P.GOAL.height - P.GOAL.ballRadius - P.GOAL.frameRadius ? 'An der Latte zu hoch' : 'Über Mauer · unter Latte';
+    }
   }
   function mode(name) {
     configureView(name);

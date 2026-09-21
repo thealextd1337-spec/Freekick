@@ -23,6 +23,16 @@
 .meter-track{position:relative;height:15px;border:2px solid #b1c9b0;border-radius:12px;margin:7px 0 3px;background:linear-gradient(90deg,#de8a58,#e7e567 50%,#de8a58)}
 .meter-track span{position:absolute;top:-5px;width:5px;height:21px;background:#fff;border:1px solid #16302a;box-shadow:0 0 6px #fff;transform:translateX(-50%)}
 .meter-box p{margin:4px 0 0;color:#c5dfc9;font-size:10px;line-height:1.25}
+.meter-box p:empty{display:none}
+.height-readout{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:7px}
+.height-readout[hidden]{display:none}
+.height-readout.single{grid-template-columns:1fr}
+.height-point{display:flex;align-items:baseline;justify-content:space-between;gap:4px;padding:5px 6px;border-radius:5px;background:#284d43;color:#e5f5da;white-space:nowrap}
+.height-point[hidden]{display:none}
+.height-point small{font-size:10px;color:#c1d6c7}
+.height-point strong{font-size:12px;color:#f5ffc9;font-variant-numeric:tabular-nums}
+.height-point.low{background:#644534}.height-point.high{background:#663d3d}.height-point.good{background:#275c43}
+.meter-box .height-advice{margin-top:5px;color:#e6f5cc;font-size:10px;font-weight:700}
 .game-shell .shoot{grid-column:2;grid-row:1/3;justify-content:center;text-align:center;min-height:70px;width:100%;border-radius:14px;border-bottom-width:5px;padding:12px;font-size:15px;box-shadow:0 6px 20px #10251b99}
 .field-tip{display:none}
 .install-hint{max-width:680px;margin:12px auto;padding:11px 14px;background:#253a40;border-left:3px solid #d5f25e;color:#e5f2dd;font-size:13px;line-height:1.4}
@@ -46,6 +56,10 @@ body:has(.game-shell:fullscreen){overflow:hidden}
   .control label,.meter-label{font-size:10px}
   .control input{height:32px;min-height:32px}
   .meter-box p{display:none}
+  .meter-box .height-advice{display:block;font-size:9px}
+  .height-point{padding:4px}
+  .height-point small{font-size:9px}
+  .height-point strong{font-size:10px}
   .game-shell .shoot{min-height:64px;padding:8px;font-size:13px}
   .hint{margin:8px 12px;font-size:10px}
   .install-hint{margin:8px 12px}
@@ -62,5 +76,6 @@ body:has(.game-shell:fullscreen){overflow:hidden}
   .control input{height:26px;min-height:26px}
   .meter-track{margin:4px 0 0}
   .meter-box p{display:none}
+  .meter-box .height-advice{display:block}
   .game-shell .shoot{min-height:54px}
 }
